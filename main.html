@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Salary Visualization</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://d3js.org/topojson.v3.min.js"></script>
+    <style>
+        #viewToggle:hover {
+            background-color: #f0f0f0;
+        }
+
+        .line {
+            fill: none;
+            stroke-width: 2;
+        }
+
+        .point {
+            stroke: white;
+            stroke-width: 1;
+        }
+
+        #container {
+            position: relative;
+            width: 1200px;
+            height: 800px;
+        }
+
+        #filterPanel {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            width: 300px;
+            height: 222px;
+            background: white;
+            border: 1px solid #ccc;
+            padding: 10px;
+            z-index: 1000;
+            opacity: 0.9;
+        }
+
+        #map {
+            float: left;
+            width: 75%;
+            height: 100%;
+        }
+
+        #barChart {
+            float: right;
+            width: 25%;
+            height: 100%;
+        }
+
+        .checkbox-group {
+            margin-top: 15px;
+        }
+
+        .range-slider {
+            margin: 20px 0;
+        }
+
+        .multi-range {
+            position: relative;
+            height: 30px;
+            margin-top: 10px;
+        }
+
+        .multi-range input[type="range"] {
+            position: absolute;
+            width: 200px;
+            pointer-events: none;
+            -webkit-appearance: none;
+            opacity: 1;
+            z-index: 2;
+            /* 确保所有滑块都在轨道上层 */
+        }
+
+        /* 修改滑块轨道样式 */
+        .multi-range input[type="range"]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 8px;
+            background: #ddd;
+            border: 1px solid #999;
+            border-radius: 4px;
+            z-index: 1;
+        }
+
+        .multi-range input[type="range"]::-moz-range-track {
+            width: 100%;
+            height: 8px;
+            background: #ddd;
+            border: 1px solid #999;
+            border-radius: 4px;
+            z-index: 1;
+        }
+
+        /* 修改滑块按钮样式 */
+        .multi-range input[type="range"]::-webkit-slider-thumb {
+            pointer-events: all;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            border: 2px solid #007bff;
+            -webkit-appearance: none;
+            background: white;
+            cursor: pointer;
+            margin-top: -6px;
+            z-index: 3;
+            /* 确保滑块在最上层 */
+        }
+
+        .multi-range input[type="range"]::-moz-range-thumb {
+            pointer-events: all;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            border: 2px solid #007bff;
+            background: white;
+            cursor: pointer;
+            z-index: 3;
+            /* 确保滑块在最上层 */
+        }
+
+        .range-values {
+            margin-top: 0px;
+            /* 减小上边距 */
+            margin-bottom: 5px;
+            /* 增加下边距 */
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .checkbox-group {
+            margin-top: 5px;
+        }
+
+        #filterPanel {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            width: 300px;
+            height: 185px;
+            background: white;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 15px;
+            z-index: 1000;
+            opacity: 0.9;
+        }
+
+        /* 标题样式 */
+        #filterPanel h3 {
+            margin-top: 0;
+            margin-bottom: 15px;
+        }
+
+        .country {
+            stroke: #999;
+            stroke-width: 0.5px;
+            transition: stroke 0.2s, stroke-width 0.2s;
+        }
+
+        .country:hover {
+            stroke: #fff;
+            stroke-width: 2px;
+        }
+
+        .legend {
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        .tooltip {
+            position: absolute;
+            padding: 8px;
+            font: 12px sans-serif;
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            pointer-events: none;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+        }
+
+        .tooltip strong {
+            font-size: 14px;
+            margin-bottom: 4px;
+            display: block;
+        }
+
+        .salary-legend {
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .legend-axis path,
+        .legend-axis line {
+            stroke: #666;
+        }
+
+        .legend-axis text {
+            fill: #666;
+        }
+
+        .detail-modal {
+            background: rgba(255, 255, 255, 0.95);
+            border: 1px solid #ddd;
+        }
+
+        .detail-modal button:hover {
+            color: #666;
+        }
+
+        .globe {
+            fill: url(#ocean-gradient);
+            stroke: #666;
+            stroke-width: 0.2px;
+        }
+
+        .country {
+            stroke: #333;
+            /* 更深的边框颜色 */
+            stroke-width: 0.2px;
+            vector-effect: non-scaling-stroke;
+        }
+
+        .country:hover {
+            stroke: #fff;
+            stroke-width: 1px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="container">
+        <div id="filterPanel">
+            <h3>Data Filter</h3>
+            <div>
+                <label>Salary Range (USD):</label>
+                <div id="salarySlider"></div>
+            </div>
+            <div class="checkbox-group" id="yearFilters">
+                <div id="yearCheckboxes">
+                    <label>Years:</label><br>
+                    <input type="checkbox" value="2020" checked> 2020
+                    <input type="checkbox" value="2021" checked> 2021
+                    <input type="checkbox" value="2022" checked> 2022
+                    <input type="checkbox" value="2023" checked> 2023
+                </div>
+            </div>
+        </div>
+        <div id="map"></div>
+        <div id="barChart"></div>
+    </div>
+    <script src="visualization.js"></script>
+</body>
+
+</html>
