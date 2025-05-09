@@ -17,7 +17,7 @@ https://github.com/user-attachments/assets/4a90b280-96ea-447b-af52-fa911397b8e7
 ## Installation
 - Clone the repo
 ```
-git clone https://github.com/fangevo/Salary-data-vizualization-with-D3.js.git
+git clone https://github.com/fangevo/Salary-data-visualization-with-D3.js.git
 ```
 - [Download the dataset](https://www.kaggle.com/datasets/arnabchaki/data-science-salaries-2023) and rename the data file to salary_data.csv, place it in the root directory.
 
